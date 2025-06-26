@@ -3,9 +3,9 @@ import bcrypt from "bcrypt"
 import { handleError } from "../helpers/handleError.js";
 
 const userSchema = new mongoose.Schema({
-    firstName: { type: String, required: true, trim: true },
-    lastName: { type: String, required: true, trim: true },
-    phone: { type: String, required: true, unique: true, trim: true },
+    firstName: { type: String, trim: true },
+    lastName: { type: String, trim: true },
+    phone: { type: String, unique: true, trim: true },
     address: { type: String, trim: true },
     email: { type: String, required: true, unique: true, trim: true },
     name: {type: String, trim:true},

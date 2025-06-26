@@ -1,10 +1,10 @@
 import User from "../models/user.model.js"
 import { handleError } from "../helpers/handleError.js"
-import  jwt  from "jsonwebtoken"
+import jwt from "jsonwebtoken"
 
-export const register = async (req, res,next) => {
+export const register = async (req, res, next) => {
     try {
-        const { firstName, lastName, phone, email, password} = req.body
+        const { firstName, lastName, phone, email, password } = req.body
         // Check if user already exists
         const existingUser = await User.findOne({ email })
         if (existingUser) {
@@ -14,7 +14,7 @@ export const register = async (req, res,next) => {
         // Create new user
         const newUser = new User({
             firstName,
-            lastName,   
+            lastName,
             phone,
             email,
             password
@@ -39,7 +39,7 @@ export const login = async (req, res, next) => {
         }
         // Check password
         const isMatch = await user.comparePassword(password)
-        
+
         // Create token
         const token = jwt.sign({
             _id: user._id,
@@ -50,64 +50,63 @@ export const login = async (req, res, next) => {
         }, process.env.JWT_SECRET)
 
         // Save cookies access token
-        res.cookie("access-token",token,{
+        res.cookie("access-token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-            path: "/"  
+            path: "/"
         })
 
         if (!isMatch) {
             return next(handleError(400, "Mật khẩu không đúng"))
         }
 
-        const newUser = user.toObject({getters: true})
+        const newUser = user.toObject({ getters: true })
         delete newUser.password
         // Return success response
-        return res.status(200).json({ message: "Đăng nhập thành công", newUser })
+        return res.status(200).json({ message: "Đăng nhập thành công", data: newUser })
     } catch (error) {
         console.error("Login error:", error)
         return next(handleError(500, "Lỗi máy chủ nội bộ"))
     }
 }
 
-export const googleLogin = async(req,res) =>{
-    try{
+export const googleLogin = async (req, res) => {
+    try {
         const { name, email, avatar } = req.body
 
-     // Check if user exists
+        // Check if user exists
         const user = await User.findOne({ email })
         if (!user) {
-            const password = Math.round(Math.random() * 10000000)
-            const newuser = new User({
-                name,
-                email,
-                avatar,
-                password
-            })
+            const password = Math.random().toString(36).slice(-8); // random 8 ký tự
+            const newUser = new User({ name, email, avatar, password });
+            await newUser.save();
+            user = newUser;
         }
-        
-        // Create token
-        const token = jwt.sign({
-            _id: user._id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            avatar: user.avatar
-        }, process.env.JWT_SECRET)
+
+        const token = jwt.sign(
+            {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                avatar: user.avatar
+            },
+            process.env.JWT_SECRET
+        );
 
         // Save cookies access token
-        res.cookie("access-token",token,{
+        res.cookie("access-token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-            path: "/"  
+            path: "/"
         })
 
-        const newUser = user.toObject({getters: true})
+        const newUser = user.toObject({ getters: true })
         delete newUser.password
         // Return success response
-        return res.status(200).json({ message: "Đăng nhập thành công", newUser })
+        return res.status(200).json({ message: "Đăng nhập thành công", data: newUser })
     } catch (error) {
         console.error("Login error:", error)
         return next(handleError(500, "Lỗi máy chủ nội bộ"))
