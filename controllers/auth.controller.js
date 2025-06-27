@@ -64,7 +64,7 @@ export const login = async (req, res, next) => {
         const newUser = user.toObject({ getters: true })
         delete newUser.password
         // Return success response
-        return res.status(200).json({ message: "Đăng nhập thành công", data: newUser })
+        return res.status(200).json({ message: "Đăng nhập thành công", data: newUser, token: token })
     } catch (error) {
         console.error("Login error:", error)
         return next(handleError(500, "Lỗi máy chủ nội bộ"))
@@ -106,9 +106,10 @@ export const googleLogin = async (req, res) => {
         const newUser = user.toObject({ getters: true })
         delete newUser.password
         // Return success response
-        return res.status(200).json({ message: "Đăng nhập thành công", data: newUser })
+        return res.status(200).json({ message: "Đăng nhập thành công", data: newUser, token: token })
     } catch (error) {
         console.error("Login error:", error)
         return next(handleError(500, "Lỗi máy chủ nội bộ"))
     }
 }
+
