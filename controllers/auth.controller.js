@@ -71,7 +71,7 @@ export const login = async (req, res, next) => {
     }
 }
 
-export const googleLogin = async (req, res) => {
+export const googleLogin = async (req, res,next) => {
     try {
         const { name, email, avatar } = req.body
 

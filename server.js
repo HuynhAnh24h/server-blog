@@ -4,6 +4,8 @@ import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import { connectDB } from './configs/database.js'
 import appRouter from './routes/index.js'
+import {multerErrorHandler} from "./helpers/handleError.js"
+import './configs/cloudinary.js';
 configDotenv()
 
 const app = express()
@@ -40,6 +42,7 @@ app.use((error,req, res, next) => {
 })
 
 app.use(appRouter)
+app.use(multerErrorHandler)
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)

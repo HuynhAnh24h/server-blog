@@ -1,39 +1,66 @@
-import User from "../models/user.model.js";
-import { handleError } from "../helpers/handleError.js"
+import { v2 as cloudinary } from 'cloudinary';
+import streamifier from 'streamifier';
+import User from '../models/user.model.js';
+import { handleError } from '../helpers/handleError.js';
+
+const uploadToCloudinary = (buffer) =>
+  new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'users',
+        resource_type: 'image',
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    streamifier.createReadStream(buffer).pipe(stream);
+  });
 
 export const updateUser = async (req, res, next) => {
   try {
-    // const {
-    //   firstName, lastName, phone, address,
-    //   email, name, password, avatar, bio
-    // } = req.body;
+  const userId = req.params.id;
+  const data = req.body;
 
-    // const {userId} = req.params
+  const user = await User.findById(userId);
+  if (!user) return next(handleError(404, 'Người dùng không tồn tại'));
 
-    // const user = await User.findById({_id:userId});
-    // if (!user) return next(handleError(401, "Không tìm thấy user"));
-
-    // // Cập nhật các field nếu có
-    // if (firstName) user.firstName = firstName;
-    // if (lastName) user.lastName = lastName;
-    // if (phone) user.phone = phone;
-    // if (address) user.address = address;
-    // if (email) user.email = email;
-    // if (name) user.name = name;
-    // if (avatar) user.avatar = avatar;
-    // if (bio) user.bio = bio;
-    // if (password) user.password = password; // sẽ được hash trong pre-save hook
-
-    // await user.save(); // lúc này password sẽ được hash nếu thay đổi
-    // const response = user.toObject({ getters: true })
-    // delete response.password
-    // return res.status(200).json({
-    //   success: true,
-    //   message: "Cập nhật user thành công",
-    //   data: response,
-    // });
-    console.log(req.body)
-  } catch (error) {
-    return next(handleError(500, "Lỗi máy chủ nội bộ"));
+  // So sánh mật khẩu nếu có
+  if (data.password) {
+    if (data.password !== data.confirmPassword) {
+      return next(handleError(400, 'Mật khẩu xác nhận không khớp'));
+    }
+    user.password = data.password; // Model tự hash
   }
+
+  // Cập nhật các field nếu có
+  const fields = ['firstName', 'lastName', 'address', 'bio', 'phone', 'email'];
+  fields.forEach((field) => {
+    if (data[field]) user[field] = data[field];
+  });
+
+  // Upload avatar nếu có
+  if (req.file?.buffer) {
+    try {
+      const { secure_url } = await uploadToCloudinary(req.file.buffer);
+      user.avatar = secure_url;
+    } catch (err) {
+      return next(handleError(500, 'Tải ảnh lên Cloudinary thất bại'));
+    }
+  }
+
+  await user.save();
+
+  const updateUser = user.toObject({ getters: true });
+  delete updateUser.password;
+
+  res.status(200).json({
+    message: 'Cập nhật người dùng thành công',
+    data: updateUser,
+  });
+} catch (error) {
+  next(handleError(500, 'Lỗi máy chủ nội bộ'));
+}
+
 };
