@@ -16,8 +16,8 @@ export const addCategory = async (req, res, next) => {
       data: newCategory,    
     })
   } catch (err) {
-    console.error("Lỗi server:", err)
-    return next(handleError(500, "Lỗi máy chủ nội bộ"))
+    console.error("Lỗi server:", err);
+    return next(handleError(500, "Đã xảy ra lỗi khi thêm danh mục"));
   }
 };
 
